@@ -2,15 +2,22 @@
 
 from sys import argv
 from os import path
+from os import listdir
 
 def main(argv):
     if argCheck(argv):
         stopwords = loadStopwords()
         terms = defSearchTerms(argv,stopwords)
+
         print(terms)
         AND_operator = ANDCheck(argv)
         search_dir = getDir(argv)
-        print(str(search_dir))
+        
+        indexExists = findIndex(search_dir)
+        if indexExists:
+            print("Index found")
+        else:
+            print("No index")
     else:
         return 1
     return 0
@@ -31,7 +38,6 @@ def defSearchTerms(argv, stopwords):
                 if argv[i] not in stopwords:
                     terms.add(argv[i])
     return terms
-
 
 
 def argCheck(argv):
@@ -74,4 +80,10 @@ def syntax_help():
     print("Syntax: python sfor <term1> <term2> ... <termn> -d <path/to/search> [-a]")
     print("-a : (optional) Only return results matching All terms")
 
+
+def findIndex(search_dir):
+    for f_name in listdir(search_dir):
+        if f_name == 'index.csv':
+            return True
+    return False
 main(argv)
