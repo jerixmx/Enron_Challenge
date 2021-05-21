@@ -1,27 +1,28 @@
 #!/usr/bin/env python
 
 from sys import argv
+from re import sub
 import os
-import glob
 
 def main(argv):
     if argCheck(argv):
         stopwords = loadStopwords()
         terms = defSearchTerms(argv,stopwords)
-
         print(terms)
         AND_operator = ANDCheck(argv)
         search_dir = getDir(argv)
-        index_path = os.path.join(search_dir,'index.csv')
-        indexExists = os.path.exists(index_path)
-        if indexExists:
+        index_path = os.path.join(search_dir,'i_index.txt')
+        index_exists = os.path.exists(index_path)
+        if index_exists:
             print("Index found")
             if checkIndexFresh(search_dir,index_path):
                 print("Fresh")
             else:
                 print("Reindex")
+                InvertedIndex(search_dir, index_path, stopwords)
         else:
             print("No index")
+            InvertedIndex(search_dir, index_path, stopwords)
     else:
         return 1
     return 0
@@ -39,8 +40,8 @@ def defSearchTerms(argv, stopwords):
     for i in range(1,arg_length):
         if argv[i] not in ["-a", "-d", "-h", "--help"]:
             if argv[i-1] != "-d":
-                if argv[i] not in stopwords:
-                    terms.add(argv[i])
+                if argv[i].lower() not in stopwords:
+                    terms.add(sub('[^0-9a-zA-Z\s]', '',argv[i]))
     return terms
 
 
@@ -84,22 +85,53 @@ def syntax_help():
     print("Syntax: python sfor <term1> <term2> ... <termn> -d <path/to/search> [-a]")
     print("-a : (optional) Only return results matching All terms")
 
-
-# def findIndex(search_dir):
-#     for f_name in os.listdir(search_dir):
-#         if f_name == 'index.csv':
-#             return True
-#     return False
-
 def checkIndexFresh(search_dir,index_path):
-
     index_time = os.path.getmtime(index_path)
     for subdir, dirs, files in os.walk(search_dir):
         for filename in files:
-            if "index.csv" not in filename:
+            if "i_index.txt" not in filename:
                 filepath = os.path.join(subdir,filename)
                 if os.path.getmtime(filepath) > index_time:
                     return False #Index not fresh if modified time of files > modified time of index
     return True
+
+
+def InvertedIndex(search_dir, index_path, stopwords):
+    words = set()
+    file_directory = dict()
+    for subdir, dirs, files in os.walk(search_dir):
+        for filename in files:
+            if "i_index.txt" not in filename:
+                filepath = os.path.join(subdir,filename)
+                with open(filepath, encoding='cp1252', mode='r') as f:
+                    # Get words in the file and remove stopwords
+                    temp_string = sub('[^0-9a-zA-Z\s]', '', f.read())
+                    content = set((temp_string.lower().split()))
+                    content.difference_update(stopwords)
+                    # add content to words set
+                    words |= content
+                    # Fill up dictionary with filepath as key and content as value
+                    file_directory[filepath] = content
+    i_index = dict()
+    for word in words:
+        i_index[word] = set()
+        for key in file_directory.keys():
+            if word in file_directory[key]:
+                i_index[word].add(key)
+    
+    with open(index_path, 'w') as f: 
+        for key, value in i_index.items(): 
+            f.write('%s:%s\n' % (key, value))
+    
+    with open("/mnt/42324F4B324F4361/PC Documents/01 - Jeri/Software Dev/Yosemite Labs/words.txt", 'w') as f: 
+        for key in i_index: 
+            f.write('%s\n' % (key))
+
+
+# Inverted index: Dictionary
+    # Key: word
+    # Value: set(filenames)
+
+#def loadIndex()
 
 main(argv)
