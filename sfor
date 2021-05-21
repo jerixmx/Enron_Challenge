@@ -12,11 +12,11 @@ def main(argv):
         print(terms)
         AND_operator = ANDCheck(argv)
         search_dir = getDir(argv)
-        
-        indexExists = findIndex(search_dir)
+        index_path = os.path.join(search_dir,'index.csv')
+        indexExists = os.path.exists(index_path)
         if indexExists:
             print("Index found")
-            if checkIndexFresh(search_dir):
+            if checkIndexFresh(search_dir,index_path):
                 print("Fresh")
             else:
                 print("Reindex")
@@ -85,14 +85,14 @@ def syntax_help():
     print("-a : (optional) Only return results matching All terms")
 
 
-def findIndex(search_dir):
-    for f_name in os.listdir(search_dir):
-        if f_name == 'index.csv':
-            return True
-    return False
+# def findIndex(search_dir):
+#     for f_name in os.listdir(search_dir):
+#         if f_name == 'index.csv':
+#             return True
+#     return False
 
-def checkIndexFresh(search_dir):
-    index_path = os.path.join(search_dir,'index.csv')
+def checkIndexFresh(search_dir,index_path):
+
     index_time = os.path.getmtime(index_path)
     for subdir, dirs, files in os.walk(search_dir):
         for filename in files:
