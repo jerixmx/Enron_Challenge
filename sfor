@@ -3,10 +3,10 @@
 from sys import argv
 from os import path
 
-
 def main(argv):
     if argCheck(argv):
-        terms = defSearchTerms(argv)
+        stopwords = loadStopwords()
+        terms = defSearchTerms(argv,stopwords)
         print(terms)
         AND_operator = ANDCheck(argv)
         search_dir = getDir(argv)
@@ -15,14 +15,21 @@ def main(argv):
         return 1
     return 0
 
-def defSearchTerms(argv):
+def loadStopwords():
+    stopwords_file = open("./nltk-stopwords", "r")
+    stopwords = stopwords_file.read().splitlines()
+    stopwords_file.close()
+    return stopwords
+
+def defSearchTerms(argv, stopwords):
     i=1
     arg_length = len(argv)
     terms = set()
     for i in range(1,arg_length):
         if argv[i] not in ["-a", "-d", "-h", "--help"]:
             if argv[i-1] != "-d":
-                terms.add(argv[i])
+                if argv[i] not in stopwords:
+                    terms.add(argv[i])
     return terms
 
 
