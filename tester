@@ -3,30 +3,40 @@
 
 # Tests for arguments
 # Check num of arguments - OK!
-echo "arg = 1: should show 1"
-python sfor
+# echo "arg = 1: should show 1"
+# python sfor
 
-echo "arg = 2: should show 2"
-python sfor 1 
+# echo "arg = 2: should show 2"
+# python sfor 1 
 
-echo "Should ask to specify dir"
-python sfor 1 2
-echo "-d last arg. Should ask to specify dir"
-python sfor 1 -d
+# echo "Should ask to specify dir"
+# python sfor 1 2
+# echo "-d last arg. Should ask to specify dir"
+# python sfor 1 -d
 
-echo "Help invoked. Should show syntax."
-python sfor --help
-python sfor -h
+# echo "Help invoked. Should show syntax."
+# python sfor --help
+# python sfor -h
 
-echo "Print search terms"
-echo "Should print: lost sound mast"
-python sfor -a lost sound mast -d /
-python sfor -d / -a lost sound mast
-python sfor -a -d / lost sound mast
-python sfor lost -a -d / sound mast
-python sfor lost -a sound -d / mast
-python sfor lost -d / -a sound mast
+# echo "Print search terms"
+# echo "Should print: lost sound mast"
+# python sfor -a lost sound mast -d /
+# python sfor -d / -a lost sound mast
+# python sfor -a -d / lost sound mast
+# python sfor lost -a -d / sound mast
+# python sfor lost -a sound -d / mast
+# python sfor lost -d / -a sound mast
 
-echo "Should print help"
-python sfor lost -d / --help -h -a sound mast
-python sfor lost -d / --help sound mast
+# echo "Should print help"
+# python sfor lost -d / --help -h -a sound mast
+# python sfor lost -d / --help sound mast
+
+# Check dir
+echo "  Should print dir"
+python sfor lost sound -d /
+echo "  Should print dir"
+python sfor lost sound -d ~/bin
+echo "  Should print dir"
+python sfor lost -d //mnt/42324F4B324F4361/PC\ Documents/01\ -\ Jeri/Software\ Dev/Yosemite\ Labs/skilling-j
+echo "  Should show not found"
+python sfor lost -d ~/bi

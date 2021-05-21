@@ -9,6 +9,8 @@ def main(argv):
         terms = defSearchTerms(argv)
         print(terms)
         AND_operator = ANDCheck(argv)
+        search_dir = getDir(argv)
+        print(str(search_dir))
     else:
         return 1
     return 0
@@ -24,6 +26,7 @@ def defSearchTerms(argv):
     return terms
 
 
+
 def argCheck(argv):
     # Show syntax for incomplete arguments or help invoked.
     if len(argv) < 3 or ("--help" or "-h") in argv:
@@ -35,8 +38,22 @@ def argCheck(argv):
         print("Specify search directory")
         syntax_help()
         return False
+    elif not(dirExists(argv)):
+        print("Search directory does not exist")
+        return False
     return True
 
+def getDir(argv):
+    i=1
+    arg_length = len(argv)
+    for i in range (arg_length-1):
+        if argv[i] == "-d":
+            search_dir = argv[i+1]
+    return search_dir
+
+def dirExists(argv):
+    search_dir = getDir(argv)
+    return path.exists(search_dir)
 
 def ANDCheck(argv):
     # #Check whether -a
