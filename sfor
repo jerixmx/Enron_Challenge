@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 from sys import argv
-from os import path
-from os import listdir
+import os
+import glob
 
 def main(argv):
     if argCheck(argv):
@@ -16,6 +16,10 @@ def main(argv):
         indexExists = findIndex(search_dir)
         if indexExists:
             print("Index found")
+            if checkIndexFresh(search_dir):
+                print("Fresh")
+            else:
+                print("Reindex")
         else:
             print("No index")
     else:
@@ -66,7 +70,7 @@ def getDir(argv):
 
 def dirExists(argv):
     search_dir = getDir(argv)
-    return path.exists(search_dir)
+    return os.path.exists(search_dir)
 
 def ANDCheck(argv):
     # #Check whether -a
@@ -82,8 +86,20 @@ def syntax_help():
 
 
 def findIndex(search_dir):
-    for f_name in listdir(search_dir):
+    for f_name in os.listdir(search_dir):
         if f_name == 'index.csv':
             return True
     return False
+
+def checkIndexFresh(search_dir):
+    index_path = os.path.join(search_dir,'index.csv')
+    index_time = os.path.getmtime(index_path)
+    for subdir, dirs, files in os.walk(search_dir):
+        for filename in files:
+            if "index.csv" not in filename:
+                filepath = os.path.join(subdir,filename)
+                if os.path.getmtime(filepath) > index_time:
+                    return False #Index not fresh if modified time of files > modified time of index
+    return True
+
 main(argv)
