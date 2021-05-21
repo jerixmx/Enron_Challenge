@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+from sys import argv
+from os import path
+
+
+def main(argv):
+    if argCheck(argv):
+        terms = defSearchTerms(argv)
+        print(terms)
+        AND_operator = ANDCheck(argv)
+    else:
+        return 1
+    return 0
+
+def defSearchTerms(argv):
+    i=1
+    arg_length = len(argv)
+    terms = set()
+    for i in range(1,arg_length):
+        if argv[i] not in ["-a", "-d", "-h", "--help"]:
+            if argv[i-1] != "-d":
+                terms.add(argv[i])
+    return terms
+
+
+def argCheck(argv):
+    # Show syntax for incomplete arguments or help invoked.
+    if len(argv) < 3 or ("--help" or "-h") in argv:
+        print("Args < 3: " + str(len(argv)))
+        syntax_help()
+        return False    
+    # Show syntax for -d not in arguments or no following
+    elif not("-d" in argv) or argv[len(argv)-1] == "-d":
+        print("Specify search directory")
+        syntax_help()
+        return False
+    return True
+
+
+def ANDCheck(argv):
+    # #Check whether -a
+    # if ("-a" in argv):
+    #     AND_operator = True
+    # else:
+    #     AND_operator = False
+    return ("-a" in argv)
+
+def syntax_help():
+    print("Syntax: python sfor <term1> <term2> ... <termn> -d <path/to/search> [-a]")
+    print("-a : (optional) Only return results matching All terms")
+
+main(argv)
