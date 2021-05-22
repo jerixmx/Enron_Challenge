@@ -24,7 +24,10 @@ def main(argv):
         ## Load, reindex, or index depending on whether index exists and index freshness
         i_index = indexMode(search_dir, stopwords)
 
-        showResults(AND_operator,terms,i_index)
+        ## Extracts a dictionary with keys that only match the search term
+        extracted_index = {key: value for key,value in i_index.items() if key in terms}
+        
+        showResults(AND_operator,terms,extracted_index)
     
     ## Return 1 if search fails argument check
     else:
@@ -159,15 +162,14 @@ def InvertedIndex(search_dir, index_path, stopwords):
     
     return i_index
 
-def search(terms, i_index):
-    
-    extracted_index = {key: value for key,value in i_index.items() if key in terms}
-    paths = set()
-    for value in extracted_index.values():
-        path_set = value
-        for path in path_set:
-            paths.add(path)
+def search(terms, extracted_index):
+    ## Extracts a dictionary with keys that only match the search term
 
+
+    ## Lists paths in the extracted index
+    paths = extractPaths (extracted_index)
+
+    ## Lists words matched for each path
     path_words = dict()
     for path in paths:
         path_words[path] = set()
@@ -219,14 +221,16 @@ def readFile(rn_max, results):
     if back_to_results.lower() in {'no','n'}:
         return 0
 
-def ANDSearch(terms, i_index):
-    
-    extracted_index = {key: value for key,value in i_index.items() if key in terms}
+def extractPaths (extracted_index):
     paths = set()
     for value in extracted_index.values():
         path_set = value
         for path in path_set:
             paths.add(path)
+
+    return paths
+
+def ANDSearch(terms, extracted_index):
 
     paths_intersection = set.intersection(*(set(values) for values in extracted_index.values()))
     
@@ -249,13 +253,14 @@ def ANDSearch(terms, i_index):
 
 
 
-def showResults(AND_operator,terms,i_index):
+def showResults(AND_operator,terms,extracted_index):
+
     show_results = 1
     while show_results == 1:
         if AND_operator is False:
-            rn_max, results = search(terms, i_index)
+            rn_max, results = search(terms, extracted_index)
         else:
-            rn_max, results = ANDSearch(terms, i_index)
+            rn_max, results = ANDSearch(terms, extracted_index)
         if rn_max > 0:
             show_results = readFile(rn_max,results)
         else:
