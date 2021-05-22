@@ -35,7 +35,7 @@ def main(argv):
 
     else:
         return 1
-        
+
     return 0
 
 def argCheck(argv):
@@ -174,11 +174,12 @@ def buildWordsFiles(search_dir, stopwords):
     words = set()
     ## For storing filepaths as key, content as values
     file_directory = dict()
-
+    file_count = 0
     for subdir, dirs, files in os.walk(search_dir):
         for filename in files:
             ## Exclude index from processing
             if 'i_index.txt' not in filename:
+                file_count += 1
                 filepath = os.path.join(subdir,filename)
                 with open(filepath, encoding='cp1252', mode='r') as f:
                     ## Remove special characters, exclude stopwords, and store words in 'content'
@@ -190,7 +191,7 @@ def buildWordsFiles(search_dir, stopwords):
                     words |= content
                     # Fill up dictionary
                     file_directory[filepath] = content
-    
+    print("%i files indexed"%file_count)
     return words, file_directory
 
 def showResults(AND_operator,terms,extracted_index):
