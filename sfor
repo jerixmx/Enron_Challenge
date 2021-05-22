@@ -199,7 +199,11 @@ def search(terms, i_index):
 def readFile(rn_max, results):
     while(True):
         if rn_max > 1:
-            rn = int(input("Select ID of file to retrieve:\t"))
+            while(True):
+                rn = input("Select ID of file to retrieve:\t")
+                if rn.isdigit():
+                    rn = int(rn)
+                    break
         else:
             rn = rn_max
         if rn <= rn_max and rn > 0:
