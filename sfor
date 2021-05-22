@@ -251,12 +251,17 @@ def resultsDict(path_set):
 def printResults(rn,results,path_words):
     if rn > 1:
         print ('%i files found containing search terms.' %(rn-1))
-        print ('ID\tMatched Terms')
+        
+        ## ANDsearch mode: ALL
+        if path_words is None:
+            print ('ID\tFile Path')
+        ## Default search mode: ANY
+        else:
+            print ('ID\tMatched Terms')
+
         for rn in results:
-            ## ANDsearch mode: ALL
             if path_words is None:
                 print(f'%i\t%s' %(rn, results[rn]))
-            ## Default search mode: ANY
             else:
                 temp_path = results[rn]
                 ## Store values in path_words dictionary matching temp_path as key
