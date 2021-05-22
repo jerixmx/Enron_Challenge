@@ -108,6 +108,7 @@ def ANDCheck(argv,len_terms):
 def indexMode(search_dir, stopwords):
     index_path = os.path.join(search_dir,'i_index.txt')
     if os.path.exists(index_path):
+        ## Checks whether files have been modified since last indexing based on last modified dates.
         if checkIndexFresh(search_dir,index_path):
             print('Index found. Loading index.')
             return loadIndex(index_path)
@@ -124,54 +125,38 @@ def checkIndexFresh(search_dir,index_path):
         for filename in files:
             if 'i_index.txt' not in filename:
                 filepath = os.path.join(subdir,filename)
+                ## Compare last-modified date of index and each files in search dir
                 if os.path.getmtime(filepath) > index_time:
-                    return False #Index not fresh if modified time of files > modified time of index
+                    return False 
     return True
-
-
-def InvertedIndex(search_dir, index_path, stopwords):
-    words = set()
-    file_directory = dict()
-    for subdir, dirs, files in os.walk(search_dir):
-        for filename in files:
-            if 'i_index.txt' not in filename:
-                filepath = os.path.join(subdir,filename)
-                with open(filepath, encoding='cp1252', mode='r') as f:
-                    ## Remove special characters
-                    ## Get words in the file and remove stopwords
-                    temp_string = sub('[^0-9a-zA-Z\s]', '', f.read())
-                    content = set((temp_string.lower().split()))
-                    content.difference_update(stopwords)
-                    # add content to words set
-                    words |= content
-                    # Fill up dictionary with filepath as key and content as value
-                    file_directory[filepath] = content
-    i_index = dict()
-    for word in words:
-        i_index[word] = set()
-        for key in file_directory.keys():
-            if word in file_directory[key]:
-                i_index[word].add(key)
-    
-    with open(index_path, 'w') as f: 
-        f.write(str(i_index))
-    
-    ## For getting test cases
-    # with open('/mnt/42324F4B324F4361/PC Documents/01 - Jeri/Software Dev/Yosemite Labs/words.txt', 'w') as f: 
-    #     for key in i_index: 
-    #         f.write('%s\n' % (key))
-    
-    return i_index
-
-
-# Inverted index: Dictionary
-    # Key: word
-    # Value: set(filenames)
 
 def loadIndex(index_path):
     with open(index_path) as f:
         index_file = f.read()
         i_index = ast.literal_eval(index_file)
+    return i_index
+
+def InvertedIndex(search_dir, index_path, stopwords):
+    ## Store unique words in words
+    ## Create directory of files as key and their content as value
+    words, file_directory = buildWordsFiles(search_dir, stopwords)
+    
+    ## Create directory of words as key and a set of filepaths that contain the word as value
+    i_index = dict()
+    for word in words:
+        i_index[word] = set()
+        for path in file_directory.keys():
+            if word in file_directory[path]:
+                i_index[word].add(path)
+    
+    with open(index_path, 'w') as f: 
+        f.write(str(i_index))
+    
+    ## Write 'words' to txt file for getting test cases
+    # with open('./words.txt', 'w') as f: 
+    #     for key in i_index: 
+    #         f.write('%s\n' % (key))
+    
     return i_index
 
 def search(terms, i_index):
@@ -276,5 +261,28 @@ def showResults(AND_operator,terms,i_index):
         else:
             break
 
+def buildWordsFiles(search_dir, stopwords):
+    ## For storing unique words in the search dir
+    words = set()
+    ## For storing filepaths as key, content as values
+    file_directory = dict()
+
+    for subdir, dirs, files in os.walk(search_dir):
+        for filename in files:
+            ## Exclude index from processing
+            if 'i_index.txt' not in filename:
+                filepath = os.path.join(subdir,filename)
+                with open(filepath, encoding='cp1252', mode='r') as f:
+                    ## Remove special characters, exclude stopwords, and store words in 'content'
+                    temp_string = sub('[^0-9a-zA-Z\s]', '', f.read())
+                    content = set((temp_string.lower().split()))
+                    content.difference_update(stopwords)
+                
+                    # add words in 'content' to 'words' set
+                    words |= content
+                    # Fill up dictionary
+                    file_directory[filepath] = content
+    
+    return words, file_directory
 
 main(argv)
