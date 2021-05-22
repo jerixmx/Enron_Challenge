@@ -21,12 +21,8 @@ def main(argv):
         ## Check whether searching ALL or ANY of the terms
         AND_operator = ANDCheck(argv,len(terms))
 
-        ## Check whether index file exists
-        index_path = os.path.join(search_dir,'i_index.txt')
-        index_exists = os.path.exists(index_path)
-
         ## Load, reindex, or index depending on whether index exists and index freshness
-        i_index = indexMode(index_exists, search_dir, index_path, stopwords)
+        i_index = indexMode(search_dir, stopwords)
 
         showResults(AND_operator,terms,i_index)
     
@@ -79,19 +75,21 @@ def defSearchTerms(argv, stopwords):
     terms = set()
     for i in range(1,arg_length):
         if argv[i] not in ['-a', '-d', '-h', '--help']:
-            ## Skip directory
+            ## Skip directory following '-d'
             if argv[i-1] != '-d':
                 if argv[i].lower() not in stopwords:
                     ## Remove special characters
                     terms.add(sub('[^0-9a-zA-Z\s]', '',argv[i]))
     return terms
 
-
-
-
-
-
-
+def lenCheck(terms):
+    if len(terms) > 0:
+        print('Search terms:\t' + str(terms).strip('{},'))
+        return True
+    else:
+        print('No search term provided or search term is a stop word.')
+        syntax_help()
+        return False
 
 def ANDCheck(argv,len_terms):
     if len_terms < 2:
@@ -107,7 +105,18 @@ def ANDCheck(argv,len_terms):
         print('Finding documents matching ANY of the terms.')
         return False
 
-
+def indexMode(search_dir, stopwords):
+    index_path = os.path.join(search_dir,'i_index.txt')
+    if os.path.exists(index_path):
+        if checkIndexFresh(search_dir,index_path):
+            print('Index found. Loading index.')
+            return loadIndex(index_path)
+        else:
+            print('Changes in search directory detected since previous index. Reindexing.')
+            return InvertedIndex(search_dir, index_path, stopwords)
+    else:
+        print('No index found. Indexing.')
+        return InvertedIndex(search_dir, index_path, stopwords)
 
 def checkIndexFresh(search_dir,index_path):
     index_time = os.path.getmtime(index_path)
@@ -253,17 +262,7 @@ def ANDSearch(terms, i_index):
 
     return rn, results
 
-def indexMode(index_exists, search_dir, index_path, stopwords):
-    if index_exists:
-        if checkIndexFresh(search_dir,index_path):
-            print('Index found. Loading index.')
-            return loadIndex(index_path)
-        else:
-            print('Changes in search directory detected since previous index. Reindexing.')
-            return InvertedIndex(search_dir, index_path, stopwords)
-    else:
-        print('No index found. Indexing.')
-        return InvertedIndex(search_dir, index_path, stopwords)
+
 
 def showResults(AND_operator,terms,i_index):
     show_results = 1
@@ -277,12 +276,5 @@ def showResults(AND_operator,terms,i_index):
         else:
             break
 
-def lenCheck(terms):
-    if len(terms) > 0:
-        print('Search terms:\t' + str(terms).strip('{},'))
-        return True
-    else:
-        print('No search term provided or search term is a stop word.')
-        syntax_help()
-        return False
+
 main(argv)
