@@ -10,7 +10,14 @@ def main(argv):
         stopwords = loadStopwords()
         terms = defSearchTerms(argv,stopwords)
         print(terms)
-        AND_operator = ANDCheck(argv)
+        AND_operator = ANDCheck(argv,len(terms))
+        if AND_operator is True:
+            print("-a")
+        else:
+            if len(terms) < 2:
+                print("Only 1 search term. Reverting to default search.")
+            else:
+                print("Default search")
         search_dir = getDir(argv)
         index_path = os.path.join(search_dir,'i_index.txt')
         
@@ -26,7 +33,16 @@ def main(argv):
             print("No index")
             i_index = InvertedIndex(search_dir, index_path, stopwords)
 
-        search(terms, i_index)
+        show_results = 1
+        while show_results == 1:
+            if AND_operator is False:
+                rn_max, results = search(terms, i_index)
+            else:
+                rn_max, results = ANDSearch(terms, i_index)
+            if rn_max > 0:
+                show_results = readFile(rn_max,results)
+            else:
+                break
         
     else:
         return 1
@@ -78,13 +94,13 @@ def dirExists(argv):
     search_dir = getDir(argv)
     return os.path.exists(search_dir)
 
-def ANDCheck(argv):
+def ANDCheck(argv,len_terms):
     # #Check whether -a
     # if ("-a" in argv):
     #     AND_operator = True
     # else:
     #     AND_operator = False
-    return ("-a" in argv)
+    return ("-a" in argv and len_terms > 1)
 
 def syntax_help():
     print("Syntax: python sfor <term1> <term2> ... <termn> -d <path/to/search> [-a]")
@@ -127,9 +143,10 @@ def InvertedIndex(search_dir, index_path, stopwords):
     with open(index_path, 'w') as f: 
         f.write(str(i_index))
     
-    with open("/mnt/42324F4B324F4361/PC Documents/01 - Jeri/Software Dev/Yosemite Labs/words.txt", 'w') as f: 
-        for key in i_index: 
-            f.write('%s\n' % (key))
+    ## For getting test cases
+    # with open("/mnt/42324F4B324F4361/PC Documents/01 - Jeri/Software Dev/Yosemite Labs/words.txt", 'w') as f: 
+    #     for key in i_index: 
+    #         f.write('%s\n' % (key))
     
     return i_index
 
@@ -166,31 +183,66 @@ def search(terms, i_index):
     for key in path_words.keys():
         results[rn] = key
         rn += 1
-    
-    print ("RN\tMatched Words")
-    for rn in results:
-        temp_path = results[rn]
-        matches = str(path_words[temp_path]).strip("{}")
-        print(f"%i\t%s" %(rn, matches))
-        print(f"%s" % temp_path)
+    if rn > 1:
+        print ("%i files containing search terms." %(rn-1))
+        print ("ID\tMatched Words")
+        for rn in results:
+            temp_path = results[rn]
+            matches = str(path_words[temp_path]).strip("{}")
+            print(f"%i\t%s" %(rn, matches))
+            print(f"%s" % temp_path)
+    else:
+        print("No matches.")
+        rn = 0
+
+    return rn, results
         
 
-    results[rn]
+def readFile(rn_max, results):
+    while(True):
+        if rn_max > 1:
+            rn = int(input("Select ID of file to retrieve:\t"))
+        else:
+            rn = rn_max
+        if rn <= rn_max and rn > 0:
+            break
+    with open(results[rn],'r') as f:
+        print(f.read())
+    
+    back_to_results = "a"
+    while(back_to_results.lower() not in {"yes","y","no","n"}):
+        back_to_results = input("Go back to search results? (y/n)\t")
+    if back_to_results.lower() in {"yes","y"}:
+        return 1
+    if back_to_results.lower() in {"no","n"}:
+        return 0
 
+def ANDSearch(terms, i_index):
+    
+    extracted_index = {key: value for key,value in i_index.items() if key in terms}
+    paths = set()
+    for value in extracted_index.values():
+        path_set = value
+        for path in path_set:
+            paths.add(path)
 
-    # results = dict()
-    # rn = 1
-    # for path in paths:
-    #     RNPath[rn] = path
-    #     rn += 1
-    # wordmatch = set()
-    # for key in RNPath.keys():
-    #     for value in RNPath.values():
-    #         for word in extracted_index.keys():
-    #             if value in extracted_index.values():
-    #                 wordmatch.add(word) 
-    #     print
-    # print(RNPath)
+    paths_intersection = set.intersection(*(set(values) for values in extracted_index.values()))
+    
+    results = dict()
+    rn = 1
+    for path in paths_intersection:
+        results[rn] = path
+        rn += 1
 
+    if rn > 1:
+        print ("%i files containing search terms." %(rn-1))
+        print ("ID\tFile")
+        for rn in results:
+            print(f"%i\t%s" %(rn, results[rn]))
+    else:
+        print("No matches.")
+        rn = 0
+
+    return rn, results
 
 main(argv)
