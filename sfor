@@ -288,9 +288,6 @@ def readFile(rn_max, results):
     rn = getID(rn_max)
     with open(results[rn],'r') as f:
         print(f.read())
-    
-
-
 
 def getID(rn_max):
     while(True):
