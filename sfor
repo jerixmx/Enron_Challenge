@@ -6,34 +6,68 @@ from sys import argv
 from re import sub
 
 def main(argv):
-    ##Check whether inputs satisfy requirements.
+    ## Check whether inputs satisfy requirements.
     if argCheck(argv):
         search_dir = getDir(argv)
         
-        ##Strip stopwords from search terms
+        ## Strip stopwords from search terms
         stopwords = loadStopwords()
         terms = defSearchTerms(argv,stopwords)
         
-        ##Checks whether there are anough search terms
+        ## Checks whether there are anough search terms
         if lenCheck(terms) is False:
             return 1
         
-        ##Check whether searching ALL or ANY of the terms
+        ## Check whether searching ALL or ANY of the terms
         AND_operator = ANDCheck(argv,len(terms))
 
-        ##Check whether index file exists
+        ## Check whether index file exists
         index_path = os.path.join(search_dir,'i_index.txt')
         index_exists = os.path.exists(index_path)
 
-        ##Load, reindex, or index depending on whether index exists and index freshness
+        ## Load, reindex, or index depending on whether index exists and index freshness
         i_index = indexMode(index_exists, search_dir, index_path, stopwords)
 
         showResults(AND_operator,terms,i_index)
     
-    ##Return 1 if search fails argument check
+    ## Return 1 if search fails argument check
     else:
         return 1
     return 0
+
+def argCheck(argv):
+    ## Show syntax for incomplete arguments or help invoked.
+    if len(argv) < 4 or ('--help' or '-h') in argv:
+        print('Incomplete arguments: ' + str(len(argv)))
+        syntax_help()
+        return False    
+    ## Show syntax for -d not in arguments or no following directory
+    elif '-d' not in argv or argv[len(argv)-1] == '-d':
+        print('Specify search directory')
+        syntax_help()
+        return False
+    ## Check whether directory exists
+    elif not(dirExists(argv)):
+        print('Search directory does not exist')
+        return False
+    return True
+
+def syntax_help():
+    print('Syntax: ./sfor <term1> <term2> ... <termn> -d <path/to/search> [-a]')
+    print('-a : (optional) Only return results matching ALL terms')
+
+def dirExists(argv):
+    search_dir = getDir(argv)
+    return os.path.exists(search_dir)
+
+## Get directory following '-d' in arguments
+def getDir(argv):
+    i=1
+    arg_length = len(argv)
+    for i in range (arg_length-1):
+        if argv[i] == '-d':
+            search_dir = argv[i+1]
+    return search_dir
 
 def loadStopwords():
     with open('./nltk-stopwords', 'r') as f:
@@ -41,68 +75,45 @@ def loadStopwords():
     return stopwords
 
 def defSearchTerms(argv, stopwords):
-    i=1
     arg_length = len(argv)
     terms = set()
     for i in range(1,arg_length):
-        if argv[i] not in ["-a", "-d", "-h", "--help"]:
-            if argv[i-1] != "-d":
+        if argv[i] not in ['-a', '-d', '-h', '--help']:
+            ## Skip directory
+            if argv[i-1] != '-d':
                 if argv[i].lower() not in stopwords:
+                    ## Remove special characters
                     terms.add(sub('[^0-9a-zA-Z\s]', '',argv[i]))
     return terms
 
 
-def argCheck(argv):
-    # Show syntax for incomplete arguments or help invoked.
-    if len(argv) < 4 or ("--help" or "-h") in argv:
-        print("Args < 4: " + str(len(argv)))
-        syntax_help()
-        return False    
-    # Show syntax for -d not in arguments or no following
-    elif not("-d" in argv) or argv[len(argv)-1] == "-d":
-        print("Specify search directory")
-        syntax_help()
-        return False
-    elif not(dirExists(argv)):
-        print("Search directory does not exist")
-        return False
-    return True
 
-def getDir(argv):
-    i=1
-    arg_length = len(argv)
-    for i in range (arg_length-1):
-        if argv[i] == "-d":
-            search_dir = argv[i+1]
-    return search_dir
 
-def dirExists(argv):
-    search_dir = getDir(argv)
-    return os.path.exists(search_dir)
+
+
+
 
 def ANDCheck(argv,len_terms):
     if len_terms < 2:
-        if "-a" in argv:
-            print("Only 1 search term. Finding documents matching term.")
+        if '-a' in argv:
+            print('Only 1 search term. Finding documents matching term.')
         else:
-            print("Finding documents matching term.")
+            print('Finding documents matching term.')
         return False
-    elif "-a" in argv:
-        print("Finding documents matching ALL terms.")
+    elif '-a' in argv:
+        print('Finding documents matching ALL terms.')
         return True
     else:
-        print("Finding documents matching ANY of the terms.")
+        print('Finding documents matching ANY of the terms.')
         return False
 
-def syntax_help():
-    print("Syntax: python sfor <term1> <term2> ... <termn> -d <path/to/search> [-a]")
-    print("-a : (optional) Only return results matching All terms")
+
 
 def checkIndexFresh(search_dir,index_path):
     index_time = os.path.getmtime(index_path)
     for subdir, dirs, files in os.walk(search_dir):
         for filename in files:
-            if "i_index.txt" not in filename:
+            if 'i_index.txt' not in filename:
                 filepath = os.path.join(subdir,filename)
                 if os.path.getmtime(filepath) > index_time:
                     return False #Index not fresh if modified time of files > modified time of index
@@ -114,10 +125,11 @@ def InvertedIndex(search_dir, index_path, stopwords):
     file_directory = dict()
     for subdir, dirs, files in os.walk(search_dir):
         for filename in files:
-            if "i_index.txt" not in filename:
+            if 'i_index.txt' not in filename:
                 filepath = os.path.join(subdir,filename)
                 with open(filepath, encoding='cp1252', mode='r') as f:
-                    # Get words in the file and remove stopwords
+                    ## Remove special characters
+                    ## Get words in the file and remove stopwords
                     temp_string = sub('[^0-9a-zA-Z\s]', '', f.read())
                     content = set((temp_string.lower().split()))
                     content.difference_update(stopwords)
@@ -136,7 +148,7 @@ def InvertedIndex(search_dir, index_path, stopwords):
         f.write(str(i_index))
     
     ## For getting test cases
-    # with open("/mnt/42324F4B324F4361/PC Documents/01 - Jeri/Software Dev/Yosemite Labs/words.txt", 'w') as f: 
+    # with open('/mnt/42324F4B324F4361/PC Documents/01 - Jeri/Software Dev/Yosemite Labs/words.txt', 'w') as f: 
     #     for key in i_index: 
     #         f.write('%s\n' % (key))
     
@@ -176,15 +188,15 @@ def search(terms, i_index):
         results[rn] = key
         rn += 1
     if rn > 1:
-        print ("%i files found containing search terms." %(rn-1))
-        print ("ID\tMatched Terms")
+        print ('%i files found containing search terms.' %(rn-1))
+        print ('ID\tMatched Terms')
         for rn in results:
             temp_path = results[rn]
-            matches = str(path_words[temp_path]).strip("{}")
-            print(f"%i\t%s" %(rn, matches))
-            print(f"%s" % temp_path)
+            matches = str(path_words[temp_path]).strip('{}')
+            print(f'%i\t%s' %(rn, matches))
+            print(f'%s' % temp_path)
     else:
-        print("No matches.")
+        print('No matches.')
         rn = 0
 
     return rn, results
@@ -194,7 +206,7 @@ def readFile(rn_max, results):
     while(True):
         if rn_max > 1:
             while(True):
-                rn = input("Select ID of file to retrieve:\t")
+                rn = input('Select ID of file to retrieve:\t')
                 if rn.isdigit():
                     rn = int(rn)
                     break
@@ -205,12 +217,12 @@ def readFile(rn_max, results):
     with open(results[rn],'r') as f:
         print(f.read())
     
-    back_to_results = "a"
-    while(back_to_results.lower() not in {"yes","y","no","n"}):
-        back_to_results = input("Go back to search results? (y/n)\t")
-    if back_to_results.lower() in {"yes","y"}:
+    back_to_results = 'a'
+    while(back_to_results.lower() not in {'yes','y','no','n'}):
+        back_to_results = input('Go back to search results? (y/n)\t')
+    if back_to_results.lower() in {'yes','y'}:
         return 1
-    if back_to_results.lower() in {"no","n"}:
+    if back_to_results.lower() in {'no','n'}:
         return 0
 
 def ANDSearch(terms, i_index):
@@ -231,12 +243,12 @@ def ANDSearch(terms, i_index):
         rn += 1
 
     if rn > 1:
-        print ("%i files containing search terms." %(rn-1))
-        print ("ID\tFile")
+        print ('%i files containing search terms.' %(rn-1))
+        print ('ID\tFile')
         for rn in results:
-            print(f"%i\t%s" %(rn, results[rn]))
+            print(f'%i\t%s' %(rn, results[rn]))
     else:
-        print("No matches.")
+        print('No matches.')
         rn = 0
 
     return rn, results
@@ -244,13 +256,13 @@ def ANDSearch(terms, i_index):
 def indexMode(index_exists, search_dir, index_path, stopwords):
     if index_exists:
         if checkIndexFresh(search_dir,index_path):
-            print("Index found. Loading index.")
+            print('Index found. Loading index.')
             return loadIndex(index_path)
         else:
-            print("Changes in search directory detected since previous index. Reindexing.")
+            print('Changes in search directory detected since previous index. Reindexing.')
             return InvertedIndex(search_dir, index_path, stopwords)
     else:
-        print("No index found. Indexing.")
+        print('No index found. Indexing.')
         return InvertedIndex(search_dir, index_path, stopwords)
 
 def showResults(AND_operator,terms,i_index):
@@ -267,10 +279,10 @@ def showResults(AND_operator,terms,i_index):
 
 def lenCheck(terms):
     if len(terms) > 0:
-        print("Search terms:\t" + str(terms).strip("{},"))
+        print('Search terms:\t' + str(terms).strip('{},'))
         return True
     else:
-        print("No search term provided or search term is a stop word.")
+        print('No search term provided or search term is a stop word.')
         syntax_help()
         return False
 main(argv)
