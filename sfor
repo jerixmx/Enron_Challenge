@@ -7,39 +7,27 @@ from re import sub
 
 
 def main(argv):
+    ##Check whether inputs satisfy requirements.
     if argCheck(argv):
+        search_dir = getDir(argv)
+        
         ##Strip stopwords from search terms
         stopwords = loadStopwords()
         terms = defSearchTerms(argv,stopwords)
         print("Search terms:\t" + str(terms).strip("{},"))
         
+        ##Check whether searching ALL or ANY of the terms
         AND_operator = ANDCheck(argv,len(terms))
 
-        search_dir = getDir(argv)
+        ##Check whether index file exists
         index_path = os.path.join(search_dir,'i_index.txt')
-        
         index_exists = os.path.exists(index_path)
-        if index_exists:
-            print("Index found")
-            if checkIndexFresh(search_dir,index_path):
-                i_index = loadIndex(index_path)
-            else:
-                print("Reindex")
-                i_index = InvertedIndex(search_dir, index_path, stopwords)
-        else:
-            print("No index")
-            i_index = InvertedIndex(search_dir, index_path, stopwords)
 
-        show_results = 1
-        while show_results == 1:
-            if AND_operator is False:
-                rn_max, results = search(terms, i_index)
-            else:
-                rn_max, results = ANDSearch(terms, i_index)
-            if rn_max > 0:
-                show_results = readFile(rn_max,results)
-            else:
-                break
+        ##Load, reindex, or index depending on whether index exists and index freshness
+        i_index = indexMode(index_exists, search_dir, index_path, stopwords)
+
+        showResults(AND_operator,terms,i_index)
+
     else:
         return 1
     return 0
@@ -97,7 +85,7 @@ def ANDCheck(argv,len_terms):
     else:
         if len_terms < 2:
             print("Only 1 search term. Reverting to default search.")
-        print("Finding documents matching ANY of the terms")
+        print("Finding documents matching ANY of the terms.")
         return False
 
 def syntax_help():
@@ -182,8 +170,8 @@ def search(terms, i_index):
         results[rn] = key
         rn += 1
     if rn > 1:
-        print ("%i files containing search terms." %(rn-1))
-        print ("ID\tMatched Words")
+        print ("%i files found containing search terms." %(rn-1))
+        print ("ID\tMatched Terms")
         for rn in results:
             temp_path = results[rn]
             matches = str(path_words[temp_path]).strip("{}")
@@ -246,5 +234,29 @@ def ANDSearch(terms, i_index):
         rn = 0
 
     return rn, results
+
+def indexMode(index_exists, search_dir, index_path, stopwords):
+    if index_exists:
+        if checkIndexFresh(search_dir,index_path):
+            print("Index found. Loading index.")
+            return loadIndex(index_path)
+        else:
+            print("Changes in search directory detected since previous index. Reindexing.")
+            return InvertedIndex(search_dir, index_path, stopwords)
+    else:
+        print("No index found. Indexing.")
+        return InvertedIndex(search_dir, index_path, stopwords)
+
+def showResults(AND_operator,terms,i_index):
+    show_results = 1
+    while show_results == 1:
+        if AND_operator is False:
+            rn_max, results = search(terms, i_index)
+        else:
+            rn_max, results = ANDSearch(terms, i_index)
+        if rn_max > 0:
+            show_results = readFile(rn_max,results)
+        else:
+            break
 
 main(argv)
