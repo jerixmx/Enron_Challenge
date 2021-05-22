@@ -162,14 +162,64 @@ def InvertedIndex(search_dir, index_path, stopwords):
     
     return i_index
 
-def search(terms, extracted_index):
-    ## Extracts a dictionary with keys that only match the search term
+def buildWordsFiles(search_dir, stopwords):
+    ## For storing unique words in the search dir
+    words = set()
+    ## For storing filepaths as key, content as values
+    file_directory = dict()
 
+    for subdir, dirs, files in os.walk(search_dir):
+        for filename in files:
+            ## Exclude index from processing
+            if 'i_index.txt' not in filename:
+                filepath = os.path.join(subdir,filename)
+                with open(filepath, encoding='cp1252', mode='r') as f:
+                    ## Remove special characters, exclude stopwords, and store words in 'content'
+                    temp_string = sub('[^0-9a-zA-Z\s]', '', f.read())
+                    content = set((temp_string.lower().split()))
+                    content.difference_update(stopwords)
+                
+                    # add words in 'content' to 'words' set
+                    words |= content
+                    # Fill up dictionary
+                    file_directory[filepath] = content
+    
+    return words, file_directory
 
+def showResults(AND_operator,terms,extracted_index):
+    show_results = 1
+    while show_results == 1:
+        if AND_operator is False:
+            rn_max, results = search(terms, extracted_index)
+        else:
+            rn_max, results = ANDSearch(terms, extracted_index)
+        if rn_max > 0:
+            show_results = readFile(rn_max,results)
+        else:
+            break
+
+def search(terms, extracted_index): 
     ## Lists paths in the extracted index
     paths = extractPaths (extracted_index)
 
     ## Lists words matched for each path
+    path_words = wordsInPath (paths, extracted_index)
+    
+    ## Build search results dictionary and print results
+    results, rn = resultsDict(path_words.keys())
+    rn = printResults(rn, results, path_words)
+
+    return rn, results
+
+def extractPaths (extracted_index):
+    paths = set()
+    for value in extracted_index.values():
+        path_set = value
+        for path in path_set:
+            paths.add(path)
+    return paths
+
+def wordsInPath (paths, extracted_index):
     path_words = dict()
     for path in paths:
         path_words[path] = set()
@@ -177,26 +227,46 @@ def search(terms, extracted_index):
             for word in extracted_index.keys():
                 if key in extracted_index[word]:
                     path_words[key].add(word)
-    
+    return path_words
+
+def resultsDict(path_set):
     results = dict()
     rn = 1
-    for key in path_words.keys():
-        results[rn] = key
+    ## Key: Running number, Value: Path
+    for path in path_set:
+        results[rn] = path
         rn += 1
+    return results, rn
+
+def printResults(rn,results,path_words):
     if rn > 1:
         print ('%i files found containing search terms.' %(rn-1))
         print ('ID\tMatched Terms')
         for rn in results:
-            temp_path = results[rn]
-            matches = str(path_words[temp_path]).strip('{}')
-            print(f'%i\t%s' %(rn, matches))
-            print(f'%s' % temp_path)
+            ## ANDsearch mode: ALL
+            if path_words is None:
+                print(f'%i\t%s' %(rn, results[rn]))
+            ## Default search mode: ANY
+            else:
+                temp_path = results[rn]
+                ## Store values in path_words dictionary matching temp_path as key
+                matches = str(path_words[temp_path]).strip('{}')
+                print(f'%i\t%s' %(rn, matches))
+                print(f'%s' % temp_path)
     else:
         print('No matches.')
         rn = 0
+    return rn
+
+def ANDSearch(terms, extracted_index):
+    ## Final path list is the intersection of paths in the extracted_index values
+    paths_intersection = set.intersection(*(set(values) for values in extracted_index.values()))
+
+    ## Build search results dictionary and print results
+    results, rn = resultsDict(paths_intersection)
+    rn = printResults(rn, results, None)
 
     return rn, results
-        
 
 def readFile(rn_max, results):
     while(True):
@@ -221,73 +291,11 @@ def readFile(rn_max, results):
     if back_to_results.lower() in {'no','n'}:
         return 0
 
-def extractPaths (extracted_index):
-    paths = set()
-    for value in extracted_index.values():
-        path_set = value
-        for path in path_set:
-            paths.add(path)
-
-    return paths
-
-def ANDSearch(terms, extracted_index):
-
-    paths_intersection = set.intersection(*(set(values) for values in extracted_index.values()))
-    
-    results = dict()
-    rn = 1
-    for path in paths_intersection:
-        results[rn] = path
-        rn += 1
-
-    if rn > 1:
-        print ('%i files containing search terms.' %(rn-1))
-        print ('ID\tFile')
-        for rn in results:
-            print(f'%i\t%s' %(rn, results[rn]))
-    else:
-        print('No matches.')
-        rn = 0
-
-    return rn, results
 
 
 
-def showResults(AND_operator,terms,extracted_index):
 
-    show_results = 1
-    while show_results == 1:
-        if AND_operator is False:
-            rn_max, results = search(terms, extracted_index)
-        else:
-            rn_max, results = ANDSearch(terms, extracted_index)
-        if rn_max > 0:
-            show_results = readFile(rn_max,results)
-        else:
-            break
 
-def buildWordsFiles(search_dir, stopwords):
-    ## For storing unique words in the search dir
-    words = set()
-    ## For storing filepaths as key, content as values
-    file_directory = dict()
 
-    for subdir, dirs, files in os.walk(search_dir):
-        for filename in files:
-            ## Exclude index from processing
-            if 'i_index.txt' not in filename:
-                filepath = os.path.join(subdir,filename)
-                with open(filepath, encoding='cp1252', mode='r') as f:
-                    ## Remove special characters, exclude stopwords, and store words in 'content'
-                    temp_string = sub('[^0-9a-zA-Z\s]', '', f.read())
-                    content = set((temp_string.lower().split()))
-                    content.difference_update(stopwords)
-                
-                    # add words in 'content' to 'words' set
-                    words |= content
-                    # Fill up dictionary
-                    file_directory[filepath] = content
-    
-    return words, file_directory
 
 main(argv)
