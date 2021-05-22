@@ -26,26 +26,3 @@ echo "Should show dir not found"
 echo "Help invoked. Should show syntax."
 ./sfor --help
 ./sfor -h
-
-# echo "Print search terms"
-# echo "Should print: lost sound mast"
-# ./sfor -a lost sound mast -d /
-# ./sfor -d / -a lost sound mast
-# ./sfor -a -d / lost sound mast
-# ./sfor lost -a -d / sound mast
-# ./sfor lost -a sound -d / mast
-# ./sfor lost -d / -a sound mast
-
-# echo "Should print help"
-# ./sfor lost -d / --help -h -a sound mast
-# ./sfor lost -d / --help sound mast
-
-# # Check dir
-# echo "  Should print dir"
-# ./sfor lost sound -d /
-# echo "  Should print dir"
-# ./sfor lost sound -d ~/bin
-# echo "  Should print dir"
-# ./sfor lost -d //mnt/42324F4B324F4361/PC\ Documents/01\ -\ Jeri/Software\ Dev/Yosemite\ Labs/skilling-j
-# echo "  Should show not found"
-# ./sfor lost -d ~/bi

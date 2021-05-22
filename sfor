@@ -12,7 +12,8 @@ def main(argv):
         
         ## Strip stopwords from search terms
         stopwords = loadStopwords()
-        terms = defSearchTerms(argv,stopwords)
+        ## start at 1 for argv. 0 index reserved to sfor
+        terms = defSearchTerms(argv,stopwords,1)
         
         ## Checks whether there are anough search terms
         if lenCheck(terms) is False:
@@ -28,10 +29,13 @@ def main(argv):
         extracted_index = {key: value for key,value in i_index.items() if key in terms}
         
         showResults(AND_operator,terms,extracted_index)
-    
-    ## Return 1 if search fails argument check
+
+        ## Asks user if they want to check again and makes another search
+        askSearch (stopwords, i_index,extracted_index)
+
     else:
         return 1
+        
     return 0
 
 def argCheck(argv):
@@ -76,10 +80,10 @@ def loadStopwords():
         stopwords = f.read().splitlines()
     return stopwords
 
-def defSearchTerms(argv, stopwords):
+def defSearchTerms(argv, stopwords,start):
     arg_length = len(argv)
     terms = set()
-    for i in range(1,arg_length):
+    for i in range(start,arg_length):
         if argv[i] not in ['-a', '-d', '-h', '--help']:
             ## Skip directory following '-d'
             if argv[i-1] != '-d':
@@ -307,5 +311,43 @@ def goResults():
         return 1
     if back_to_results.lower() in {'no','n'}:
         return 0
+
+def newTerms(stopwords):
+    terms_input = input("Enter space separated search terms \t").split(" ")
+    ## start at 0 index
+    terms = defSearchTerms(terms_input,stopwords,0)
+    
+    return terms
+
+def newAND(terms):
+    if len(terms) < 2:
+        print('Finding documents matching term.')
+        return False
+    temp = 'a'
+    while(temp.lower() not in {'yes','y','no','n'}):
+        temp = input("Only return results matching ALL terms? (y/n)\t\t")
+    if temp.lower() in {'yes','y'}:
+        print('Finding documents matching ALL terms.')
+        return True
+    else:
+        print('Finding documents matching ANY of the terms.')
+        return False
+
+def askSearch (stopwords, i_index,extracted_index):
+    search_again = 'a'
+    while(search_again.lower() not in {'no','n'}):
+        search_again = input('Do another search? (y/n)\t\t')
+        if search_again.lower() in {'yes','y'}:
+            newSearch(stopwords, i_index,extracted_index)
+        if search_again.lower() in {'no','n'}:
+            break
+
+def newSearch(stopwords, i_index,extracted_index):
+    terms = newTerms(stopwords)
+    if lenCheck(terms) is False:
+        return 1
+    AND_operator = newAND(terms)
+    extracted_index = {key: value for key,value in i_index.items() if key in terms}
+    showResults(AND_operator,terms,extracted_index)
 
 main(argv)
