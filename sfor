@@ -36,10 +36,13 @@ def main(argv):
 
 def argCheck(argv):
     ## Show syntax for incomplete arguments or help invoked.
-    if len(argv) < 4 or ('--help' or '-h') in argv:
+    if '-h' in argv or '--help' in argv:
+        syntax_help()
+        return False  
+    elif len(argv) < 4:
         print('Incomplete arguments: ' + str(len(argv)))
         syntax_help()
-        return False    
+        return False 
     ## Show syntax for -d not in arguments or no following directory
     elif '-d' not in argv or argv[len(argv)-1] == '-d':
         print('Specify search directory')
@@ -194,7 +197,9 @@ def showResults(AND_operator,terms,extracted_index):
         else:
             rn_max, results = ANDSearch(terms, extracted_index)
         if rn_max > 0:
-            show_results = readFile(rn_max,results)
+            readFile(rn_max,results)
+            ## Check whether user wants to go back to results
+            show_results = goResults()
         else:
             break
 
@@ -269,33 +274,38 @@ def ANDSearch(terms, extracted_index):
     return rn, results
 
 def readFile(rn_max, results):
+    ## Ask user to select file ID to retrieve
+    rn = getID(rn_max)
+    with open(results[rn],'r') as f:
+        print(f.read())
+    
+
+
+
+def getID(rn_max):
     while(True):
         if rn_max > 1:
+            ## Disallow non-digit input to RN
             while(True):
                 rn = input('Select ID of file to retrieve:\t')
                 if rn.isdigit():
                     rn = int(rn)
-                    break
-        else:
-            rn = rn_max
-        if rn <= rn_max and rn > 0:
-            break
-    with open(results[rn],'r') as f:
-        print(f.read())
-    
+                    if rn <= rn_max and rn > 0:
+                        return rn
+        ## Automatically load file if there's only one match
+        elif rn_max == 1:
+            return 1
+    return rn
+
+def goResults():
     back_to_results = 'a'
+    ## Check whether input is valid
     while(back_to_results.lower() not in {'yes','y','no','n'}):
         back_to_results = input('Go back to search results? (y/n)\t')
+        
     if back_to_results.lower() in {'yes','y'}:
         return 1
     if back_to_results.lower() in {'no','n'}:
         return 0
-
-
-
-
-
-
-
 
 main(argv)
