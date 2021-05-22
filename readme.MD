@@ -14,11 +14,10 @@ Keep `sfor` and `nltk-stopwords.txt` in the same directory.
 Syntax:
 `./sfor <term1> <term2> ... <termn> -d <path/to/search> [-a]`
 
-By default, sfor will look for matches to ANY of the search terms.
-
-To return only results that match ALL terms, use `-a`.
+By default, sfor will look for matches to ANY of the search terms. To return only results that match ALL terms, use `-a`.
 
 ## Demo
 A demo gif is available but not linked to this readme due to flashes while rendering.
+
 ---
 <sup>1</sup>NLTK Stopwords Corpus used is obtained from [NLTK.org](https://www.nltk.org/nltk_data/).
