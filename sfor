@@ -36,9 +36,8 @@ def main(argv):
     return 0
 
 def loadStopwords():
-    stopwords_file = open("./nltk-stopwords", "r")
-    stopwords = stopwords_file.read().splitlines()
-    stopwords_file.close()
+    with open('./nltk-stopwords', 'r') as f:
+        stopwords = f.read().splitlines()
     return stopwords
 
 def defSearchTerms(argv, stopwords):
