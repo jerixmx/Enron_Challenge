@@ -2,6 +2,7 @@
 
 from sys import argv
 from re import sub
+import ast
 import os
 
 def main(argv):
@@ -16,13 +17,13 @@ def main(argv):
         if index_exists:
             print("Index found")
             if checkIndexFresh(search_dir,index_path):
-                print("Fresh")
+                loadIndex(index_path)
             else:
                 print("Reindex")
-                InvertedIndex(search_dir, index_path, stopwords)
+                i_index = InvertedIndex(search_dir, index_path, stopwords)
         else:
             print("No index")
-            InvertedIndex(search_dir, index_path, stopwords)
+            i_index = InvertedIndex(search_dir, index_path, stopwords)
     else:
         return 1
     return 0
@@ -120,18 +121,24 @@ def InvertedIndex(search_dir, index_path, stopwords):
                 i_index[word].add(key)
     
     with open(index_path, 'w') as f: 
-        for key, value in i_index.items(): 
-            f.write('%s:%s\n' % (key, value))
+        f.write(str(i_index))
     
     with open("/mnt/42324F4B324F4361/PC Documents/01 - Jeri/Software Dev/Yosemite Labs/words.txt", 'w') as f: 
         for key in i_index: 
             f.write('%s\n' % (key))
+    
+    return i_index
 
 
 # Inverted index: Dictionary
     # Key: word
     # Value: set(filenames)
 
-#def loadIndex()
+def loadIndex(index_path):
+    with open(index_path) as f:
+        index_file = f.read()
+        i_index = ast.literal_eval(index_file)
+    print(i_index)
+    return i_index
 
 main(argv)
