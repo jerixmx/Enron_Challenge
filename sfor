@@ -1,23 +1,20 @@
 #!/usr/bin/env python
 
+import os
+import ast
 from sys import argv
 from re import sub
-import ast
-import os
+
 
 def main(argv):
     if argCheck(argv):
+        ##Strip stopwords from search terms
         stopwords = loadStopwords()
         terms = defSearchTerms(argv,stopwords)
-        print(terms)
+        print("Search terms:\t" + str(terms).strip("{},"))
+        
         AND_operator = ANDCheck(argv,len(terms))
-        if AND_operator is True:
-            print("-a")
-        else:
-            if len(terms) < 2:
-                print("Only 1 search term. Reverting to default search.")
-            else:
-                print("Default search")
+
         search_dir = getDir(argv)
         index_path = os.path.join(search_dir,'i_index.txt')
         
@@ -43,7 +40,6 @@ def main(argv):
                 show_results = readFile(rn_max,results)
             else:
                 break
-        
     else:
         return 1
     return 0
@@ -95,12 +91,14 @@ def dirExists(argv):
     return os.path.exists(search_dir)
 
 def ANDCheck(argv,len_terms):
-    # #Check whether -a
-    # if ("-a" in argv):
-    #     AND_operator = True
-    # else:
-    #     AND_operator = False
-    return ("-a" in argv and len_terms > 1)
+    if "-a" in argv and len_terms > 1:
+        print("Finding documents matching ALL terms.")
+        return True
+    else:
+        if len_terms < 2:
+            print("Only 1 search term. Reverting to default search.")
+        print("Finding documents matching ANY of the terms")
+        return False
 
 def syntax_help():
     print("Syntax: python sfor <term1> <term2> ... <termn> -d <path/to/search> [-a]")
